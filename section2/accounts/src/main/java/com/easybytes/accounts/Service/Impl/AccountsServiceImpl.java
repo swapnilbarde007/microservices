@@ -4,10 +4,13 @@ import com.easybytes.accounts.Constants.AccountsConstants;
 import com.easybytes.accounts.Entity.Accounts;
 import com.easybytes.accounts.Entity.Customer;
 import com.easybytes.accounts.Exception.CustomerAlreadyExistsException;
+import com.easybytes.accounts.Exception.ResourceNotFoundException;
+import com.easybytes.accounts.Mapper.AccountsMapper;
 import com.easybytes.accounts.Mapper.CustomerMapper;
 import com.easybytes.accounts.Repository.AccountsRepository;
 import com.easybytes.accounts.Repository.CustomerRepository;
 import com.easybytes.accounts.Service.IAccountsService;
+import com.easybytes.accounts.dto.AccountsDto;
 import com.easybytes.accounts.dto.CustomerDto;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -43,6 +46,7 @@ public class AccountsServiceImpl implements IAccountsService {
         accountsRepository.save(createNewAccount(savedCustomer));
     }
 
+
     private Accounts createNewAccount(Customer customer){
         Accounts newAccount= new Accounts();
         newAccount.setCustomerId(customer.getCustomerId());
@@ -54,4 +58,18 @@ public class AccountsServiceImpl implements IAccountsService {
         newAccount.setBranchAddress(AccountsConstants.ADDRESS);
         return newAccount;
     }
+    @Override
+    public CustomerDto fetchAccount(String mobileNumber) {
+        Customer customer=customerRepository.findByMobileNumber(mobileNumber).orElseThrow(
+                ()->new ResourceNotFoundException("Customer","Mobile Number",mobileNumber));
+
+        Accounts account=accountsRepository.findByCustomerId(customer.getCustomerId()).orElseThrow(
+                ()->new ResourceNotFoundException("Account","Customer ID",customer.getCustomerId().toString())
+        );
+
+        CustomerDto customerDto=CustomerMapper.mapToCustomerDto(customer,new CustomerDto());
+        customerDto.setAccountsDto(AccountsMapper.mapToAccountsDto(account,new AccountsDto()));
+        return customerDto;
+    }
+
 }
